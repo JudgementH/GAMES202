@@ -1,0 +1,69 @@
+# Prerequisites
+*.d
+
+# Compiled Object files
+*.slo
+*.lo
+*.o
+*.obj
+
+# Precompiled Headers
+*.gch
+*.pch
+
+# Compiled Dynamic libraries
+*.so
+*.dylib
+*.dll
+
+# Fortran module files
+*.mod
+*.smod
+
+# Compiled Static libraries
+*.lai
+*.la
+*.a
+*.lib
+
+# Executables
+*.exe
+*.out
+*.app
+
+# My
+a1/.vscode/
+a0/.idea/
+a0/cmake-build-debug
+a0/build/
+
+a1/.idea/
+a1/cmake-build-debug
+a1/.vscode/
+a1/build/
+
+a2/.idea/
+a2/.vscode/
+a2/build/
+a2/cmake-build-debug
+
+a3/.idea/
+a3/.vscode/
+a3/build/
+a3/cmake-build-debug
+
+a4/.vscode/
+a4/build/
+
+a5/.vscode/
+a5/build/
+
+
+a6/.vscode/
+a6/build/
+
+a7/.vscode/
+a7/build/
+
+a8/.vscode/
+a8/build/
