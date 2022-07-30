@@ -1,4 +1,4 @@
-# GAMES101
+# GAMES202
 Course assignments for GAMES202
 
 
