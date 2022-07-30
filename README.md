@@ -17,3 +17,12 @@ IDE：vscode
 
 ![image-20220730145640654](images/image-20220730145640654.png)
 
+
+
+# Assignment 1 (a1) 实时阴影
+
+
+
+## shadow map
+
+![image-20220731031537663](images/image-20220731031537663.png)
