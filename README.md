@@ -26,3 +26,29 @@ IDE：vscode
 ## shadow map
 
 ![image-20220731031537663](images/image-20220731031537663.png)
+
+
+
+
+
+## PCF
+
+**Naive PCE**
+
+![image-20220802012030943](images/image-20220802012030943.png)
+
+
+
+**PoissonSample PCF**
+
+![image-20220802013602288](images/image-20220802013602288.png)
+
+采样20点，noise比较大
+
+
+
+## PCSS
+
+![image-20220802020315609](images/image-20220802020315609.png)
+
+远处更虚

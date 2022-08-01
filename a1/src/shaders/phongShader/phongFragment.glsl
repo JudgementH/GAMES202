@@ -84,32 +84,74 @@ void uniformDiskSamples(const in vec2 randomSeed){
 }
 
 float findBlocker(sampler2D shadowMap,vec2 uv,float zReceiver){
-  return 1.;
+  int inSoftShadow=0;
+  float softShadowDepth=0.;
+  
+  poissonDiskSamples(uv);
+  float sampleSize=50.;
+  float texelSize=1./2048.;
+  
+  for(int i=0;i<NUM_SAMPLES;i++){
+    float pDepth=unpack(texture2D(shadowMap,uv+poissonDisk[i]*sampleSize*texelSize));
+    if(zReceiver>pDepth+EPS){
+      inSoftShadow++;
+      softShadowDepth+=pDepth;
+    }
+  }
+  
+  if(inSoftShadow==0){
+    return 1.;
+  }
+  
+  return softShadowDepth/float(inSoftShadow);
 }
 
 float PCF(sampler2D shadowMap,vec4 coords){
   float visi=0.;
-  vec2 texelSize=vec2(1./2048.,1./2048.);
-  for(int x=-1;x<=1;x++){
-    for(int y=-1;y<=1;y++){
-      float shadowDepth=unpack(texture2D(shadowMap,coords.xy+vec2(x,y)));
-      if(coords.z<shadowDepth+EPS){
-        visi+=1.;
-      }
+  float texelSize=1./2048.;
+  
+  // for(int x=-3;x<=3;x++){
+    //   for(int y=-3;y<=3;y++){
+      //     float shadowDepth=unpack(texture2D(shadowMap,coords.xy+vec2(x,y)*texelSize));
+      //     if(coords.z<shadowDepth+EPS){
+        //       visi+=1.;
+      //     }
+    //   }
+  // }
+  
+  float sampleSize=10.;
+  poissonDiskSamples(coords.xy);
+  // uniformDiskSamples(coords.xy);
+  for(int i=0;i<NUM_SAMPLES;i++){
+    float shadowDepth=unpack(texture2D(shadowMap,coords.xy+poissonDisk[i]*sampleSize*texelSize));
+    if(coords.z<shadowDepth+EPS){
+      visi+=1.;
     }
   }
-  return visi/9.;
+  
+  return visi/float(NUM_SAMPLES);
 }
 
 float PCSS(sampler2D shadowMap,vec4 coords){
   
   // STEP 1: avgblocker depth
-  
+  float d_blocker=findBlocker(shadowMap,coords.xy,coords.z);
   // STEP 2: penumbra size
+  float w_light=1.;
+  float w_penumbra=w_light*(coords.z-d_blocker)/d_blocker;
   
   // STEP 3: filtering
+  float visi=0.;
+  float sampleSize=20.;
+  float texelSize=1./2048.;
+  for(int i=0;i<NUM_SAMPLES;i++){
+    float p_depth=unpack(texture2D(shadowMap,coords.xy+poissonDisk[i]*sampleSize*texelSize*w_penumbra));
+    if(coords.z<p_depth+EPS){
+      visi+=1.;
+    }
+  }
   
-  return 1.;
+  return visi/float(NUM_SAMPLES);
   
 }
 
@@ -120,15 +162,25 @@ float useShadowMap(sampler2D shadowMap,vec4 shadowCoord){
   
   float frustumSize=200.;
   float shadowMapSize=2048.;
+  vec4 shadowCoord4=shadowCoord;
   float d=frustumSize/shadowMapSize/2.;
+  
   vec3 lightDir=normalize(uLightPos-vFragPos);
   vec3 nor=normalize(vNormal);
   
-  float x_bias=max(EPS,d*(1.-dot(lightDir,nor)));
+  // quick bias
+  // float x_bias=max(EPS,d*(1.-dot(lightDir,nor)));
   
-  //背面peter panning严重的问题
+  // depth bias
+  float cos_theta=dot(lightDir,nor);
+  float sin_theta=sqrt(1.-cos_theta*cos_theta);
+  float tan_theta=sin_theta/(cos_theta+EPS);
+  float rel=length(fract(shadowCoord4).xy-vec2(.5,.5));
+  float x_bias=clamp((d/2.*tan_theta)*rel,0.,.02);//important
   
-  if(cur>=dep+EPS){
+  // normal bias
+  
+  if(cur>=dep+x_bias){
     return 0.;
   }
   
@@ -163,8 +215,8 @@ void main(void){
   vec3 shadowCoord=vPositionFromLight.xyz/vPositionFromLight.w;
   shadowCoord=(shadowCoord+1.)/2.;
   // visibility=useShadowMap(uShadowMap,vec4(shadowCoord,1.));
-  visibility=PCF(uShadowMap,vec4(shadowCoord,1.));
-  //visibility = PCSS(uShadowMap, vec4(shadowCoord, 1.0));
+  // visibility=PCF(uShadowMap,vec4(shadowCoord,1.));
+  visibility=PCSS(uShadowMap,vec4(shadowCoord,1.));
   
   vec3 phongColor=blinnPhong();
   
