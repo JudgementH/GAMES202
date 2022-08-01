@@ -88,7 +88,17 @@ float findBlocker(sampler2D shadowMap,vec2 uv,float zReceiver){
 }
 
 float PCF(sampler2D shadowMap,vec4 coords){
-  return 1.;
+  float visi=0.;
+  vec2 texelSize=vec2(1./2048.,1./2048.);
+  for(int x=-1;x<=1;x++){
+    for(int y=-1;y<=1;y++){
+      float shadowDepth=unpack(texture2D(shadowMap,coords.xy+vec2(x,y)));
+      if(coords.z<shadowDepth+EPS){
+        visi+=1.;
+      }
+    }
+  }
+  return visi/9.;
 }
 
 float PCSS(sampler2D shadowMap,vec4 coords){
@@ -107,6 +117,16 @@ float useShadowMap(sampler2D shadowMap,vec4 shadowCoord){
   vec4 c=texture2D(shadowMap,shadowCoord.xy);
   float dep=unpack(c);
   float cur=shadowCoord.z;
+  
+  float frustumSize=200.;
+  float shadowMapSize=2048.;
+  float d=frustumSize/shadowMapSize/2.;
+  vec3 lightDir=normalize(uLightPos-vFragPos);
+  vec3 nor=normalize(vNormal);
+  
+  float x_bias=max(EPS,d*(1.-dot(lightDir,nor)));
+  
+  //背面peter panning严重的问题
   
   if(cur>=dep+EPS){
     return 0.;
@@ -142,12 +162,15 @@ void main(void){
   float visibility;
   vec3 shadowCoord=vPositionFromLight.xyz/vPositionFromLight.w;
   shadowCoord=(shadowCoord+1.)/2.;
-  visibility=useShadowMap(uShadowMap,vec4(shadowCoord,1.));
-  //visibility = PCF(uShadowMap, vec4(shadowCoord, 1.0));
+  // visibility=useShadowMap(uShadowMap,vec4(shadowCoord,1.));
+  visibility=PCF(uShadowMap,vec4(shadowCoord,1.));
   //visibility = PCSS(uShadowMap, vec4(shadowCoord, 1.0));
   
   vec3 phongColor=blinnPhong();
   
   gl_FragColor=vec4(phongColor*visibility,1.);
   // gl_FragColor=vec4(phongColor,1.);
+  
+  // float depth_=unpack(texture2D(uShadowMap,shadowCoord.xy));
+  // gl_FragColor=vec4(visibility,visibility,visibility,1.);
 }

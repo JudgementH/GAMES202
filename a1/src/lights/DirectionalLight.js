@@ -22,7 +22,7 @@ class DirectionalLight {
         let projectionMatrix = mat4.create();
 
         // Model transform
-        mat4.translate(modelMatrix, modelMatrix, translate)
+        mat4.translate(modelMatrix, modelMatrix, translate);
         mat4.scale(modelMatrix, modelMatrix, scale);
 
         // // View transform
