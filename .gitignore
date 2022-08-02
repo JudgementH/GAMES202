@@ -46,6 +46,13 @@ a2/.idea/
 a2/.vscode/
 a2/build/
 a2/cmake-build-debug
+a2/prt/build/
+a2/prt/.vscode/
+a2/prt/.idea/
+a2/prt/cmake-build-release/
+a2/prt/cmake-build-debug/
+a2/homework2/build/
+a2/homework2/.vscode/
 
 a3/.idea/
 a3/.vscode/
