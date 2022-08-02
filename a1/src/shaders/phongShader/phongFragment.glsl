@@ -137,15 +137,14 @@ float PCSS(sampler2D shadowMap,vec4 coords){
   // STEP 1: avgblocker depth
   float d_blocker=findBlocker(shadowMap,coords.xy,coords.z);
   // STEP 2: penumbra size
-  float w_light=1.;
+  float w_light=100.;
   float w_penumbra=w_light*(coords.z-d_blocker)/d_blocker;
   
   // STEP 3: filtering
   float visi=0.;
-  float sampleSize=20.;
   float texelSize=1./2048.;
   for(int i=0;i<NUM_SAMPLES;i++){
-    float p_depth=unpack(texture2D(shadowMap,coords.xy+poissonDisk[i]*sampleSize*texelSize*w_penumbra));
+    float p_depth=unpack(texture2D(shadowMap,coords.xy+poissonDisk[i]*texelSize*w_penumbra));
     if(coords.z<p_depth+EPS){
       visi+=1.;
     }
