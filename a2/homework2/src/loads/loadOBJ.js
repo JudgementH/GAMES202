@@ -32,10 +32,9 @@ function loadOBJ(renderer, path, name, objMaterial, transform) {
 							else mat = child.material;
 
 							var indices = Array.from({ length: geo.attributes.position.count }, (v, k) => k);
-
 							let mesh = new Mesh({ name: 'aVertexPosition', array: geo.attributes.position.array },
 								{ name: 'aNormalPosition', array: geo.attributes.normal.array },
-								//{ name: 'aTextureCoord', array: geo.attributes.uv.array },
+								// { name: 'aTextureCoord', array: geo.attributes.uv.array },
 								null,
 								indices, transform);
 							let colorMap = new Texture();
@@ -45,19 +44,20 @@ function loadOBJ(renderer, path, name, objMaterial, transform) {
 							else {
 								colorMap.CreateConstantTexture(renderer.gl, mat.color.toArray());
 							}
-
 							let material, shadowMaterial;
 							let Translation = [transform.modelTransX, transform.modelTransY, transform.modelTransZ];
 							let Scale = [transform.modelScaleX, transform.modelScaleY, transform.modelScaleZ];
 
 							let light = renderer.lights[0].entity;
-
 							switch (objMaterial) {
 								case 'PhongMaterial':
 									material = buildPhongMaterial(colorMap, mat.specular.toArray(), light, Translation, Scale, "./src/shaders/phongShader/phongVertex.glsl", "./src/shaders/phongShader/phongFragment.glsl");
 									shadowMaterial = buildShadowMaterial(light, Translation, Scale, "./src/shaders/shadowShader/shadowVertex.glsl", "./src/shaders/shadowShader/shadowFragment.glsl");
 									break;
 								// TODO: Add your PRTmaterial here
+								case 'PRTMaterial':
+									material = buildPRTMaterial(colorMap, mat.specular.toArray(), light, Translation, Scale, "./src/shaders/prtShader/prtVertex.glsl", "./src/shaders/prtShader/prtFragment.glsl");
+									break;
 
 								case 'SkyBoxMaterial':
 									material = buildSkyBoxMaterial("./src/shaders/skyBoxShader/SkyBoxVertex.glsl", "./src/shaders/skyBoxShader/SkyBoxFragment.glsl");

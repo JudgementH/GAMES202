@@ -56,3 +56,15 @@ IDE：vscode
 
 
 # Assignment 2 (a2) Precomputed Radiance Transfer
+
+
+
+## PRT
+
+![image-20220804113640231](images/image-20220804113640231.png)
+
+
+
+**环境光**
+
+![image-20220804202705960](images/image-20220804202705960.png)

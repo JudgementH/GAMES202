@@ -94,7 +94,7 @@ NORI_NAMESPACE_BEGIN
                     for (int x = 0; x < width; x++) {
                         float u = 2 * ((x + 0.5) / width) - 1;
                         float v = 2 * ((y + 0.5) / height) - 1;
-                        Eigen::Vector3f dir = (faceDirX * u + faceDirY * v + faceDirZ).normalized();
+                        Eigen::Vector3f dir = (faceDirX * u + faceDirY * v + faceDirZ).normalized() ;
                         cubemapDirs.push_back(dir);
                     }
                 }
@@ -104,6 +104,7 @@ NORI_NAMESPACE_BEGIN
             for (int i = 0; i < SHNum; i++)
                 SHCoeffiecents[i] = Eigen::Array3f(0);
             float sumWeight = 0;
+            // 3重循环 相当于遍历球面上每一个点，可以通过images[i][x][y][z]拿到所有的环境光 L_{dir}(omega_i)
             for (int i = 0; i < 6; i++) {
                 for (int y = 0; y < height; y++) {
                     for (int x = 0; x < width; x++) {
@@ -114,10 +115,13 @@ NORI_NAMESPACE_BEGIN
                         Eigen::Array3f Le(images[i][index + 0], images[i][index + 1],
                                           images[i][index + 2]);
                         float dwi = CalcArea(x, y, width, height);
+
+                        //遍历所有的SH基函数,用求和代替积分，每个基函数都要求其系数
                         for (int l = 0; l < SHOrder; l++) {
-                            for (int m = -l; m < SHOrder; m++) {
+                            for (int m = -l; m <= l; m++) {
                                 int coeffIndex = sh::GetIndex(l, m);
-                                Eigen::Array3f coeff = Le * sh::EvalSH(l, m, dir.cast<double>().normalized()) * dwi;
+                                // Le是前面算出来的当前入射角dwi的环境光, EvalSH就是第l，m个SH函数，dwi是把积分换成求和
+                                Eigen::Array3f coeff = Le * sh::EvalSH(l, m, dir.cast<double>().normalized()) * dwi / 3.1415926;
                                 SHCoeffiecents[coeffIndex] += coeff;
                             }
                         }
@@ -158,7 +162,7 @@ NORI_NAMESPACE_BEGIN
 
         double *SumIndirectCoeffs(const MatrixXf *directCoeffs, const Scene *scene, const Point3f &v, const Normal3f &n,
                                   int depth = 0) {
-            double ret[SHCoeffLength] = {0, 0, 0, 0, 0, 0, 0, 0, 0};
+            double ret[SHCoeffLength] = {0};
             if (depth > m_Bounce) return ret;
 
             // 蒙特卡洛
@@ -209,9 +213,7 @@ NORI_NAMESPACE_BEGIN
                             }
 
                         }
-                        return ret;
                     }
-                    return ret;
                 }
             }
             return ret;
@@ -249,18 +251,16 @@ NORI_NAMESPACE_BEGIN
                     if (m_Type == Type::Unshadowed) {
                         // TODO: here you need to calculate unshadowed transport term of a given direction
                         // TODO: 此处你需要计算给定方向下的unshadowed传输项球谐函数值
-                        float h = wi.normalized().dot(n);
-                        if (h > 0.0) {
-                            return h;
-                        }
-                        return 0;
+                        float cos_wi = std::clamp(wi.normalized().dot(n), 0.0f, 1.0f);
+                        return cos_wi;
                     } else {
                         // TODO: here you need to calculate shadowed transport term of a given direction
                         // TODO: 此处你需要计算给定方向下的shadowed传输项球谐函数值
                         Ray3f ray{v, wi.normalized()};
-                        float h = wi.normalized().dot(n);
-                        if ((!scene->rayIntersect(ray)) && (h > 0.0)) {
-                            return h;
+                        float cos_wi = std::max(wi.normalized().dot(n), 0.0f);
+                        // visibility is 1 or 0
+                        if (!scene->rayIntersect(ray)) {
+                            return cos_wi;
                         }
                         return 0;
                     }
@@ -274,10 +274,12 @@ NORI_NAMESPACE_BEGIN
                 // TODO: leave for bonus
                 MatrixXf indirectCoeffs;
                 indirectCoeffs.resize(SHCoeffLength, mesh->getVertexCount());
+                // 遍历所有的顶点求 SH系数
                 for (int i = 0; i < mesh->getVertexCount(); i++) {
-                    const Point3f &v = mesh->getVertexPositions().col(i);
+                    const Point3f &p = mesh->getVertexPositions().col(i);
                     const Normal3f &n = mesh->getVertexNormals().col(i).normalized();
-                    double *vertexCoeffs = SumIndirectCoeffs(&m_TransportSHCoeffs, scene, v, n, 1);
+                    // 对于一点p来说，计算本点的SH系数
+                    double *vertexCoeffs = SumIndirectCoeffs(&m_TransportSHCoeffs, scene, p, n, 1);
                     for (int j = 0; j < SHCoeffLength; j++) {
                         indirectCoeffs.col(i).coeffRef(j) = vertexCoeffs[j];
                     }
@@ -326,10 +328,10 @@ NORI_NAMESPACE_BEGIN
             // TODO: you need to delete the following four line codes after finishing your calculation to SH,
             //       we use it to visualize the normals of model for debug.
             // TODO: 在完成了球谐系数计算后，你需要删除下列四行，这四行代码的作用是用来可视化模型法线
-            if (c.isZero()) {
-                auto n_ = its.shFrame.n.cwiseAbs();
-                return Color3f(n_.x(), n_.y(), n_.z());
-            }
+//            if (c.isZero()) {
+//                auto n_ = its.shFrame.n.cwiseAbs();
+//                return Color3f(n_.x(), n_.y(), n_.z());
+//            }
             return c;
         }
 
